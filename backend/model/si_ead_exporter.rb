@@ -6,7 +6,7 @@ require 'securerandom'
 class EADSerializer < ASpaceExport::Serializer
     serializer_for :ead
 
-    # MODIFCATION: Add @type for EDAN object_type processing
+    # MODIFICATION: Add @type for EDAN object_type processing
     def serialize_extents(obj, xml, fragments)
       if obj.extents.length
         obj.extents.each do |e|
