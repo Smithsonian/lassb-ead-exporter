@@ -5,6 +5,8 @@ module ASpaceExport
   module ArchivalObjectDescriptionHelpers
 
     # MODIFICATION: add cultural_context as a subject, rather than geogname, which is ASpace's default.
+    # MODIFICATION: add temporal as a subject (not exported by default).
+    # MODIFICATION: add altrender="term_type".
     def controlaccess_subjects
       unless @controlaccess_subjects
         results = []
@@ -14,17 +16,17 @@ module ASpaceExport
 
           node_name = case subject['terms'][0]['term_type']
                       when 'function'; 'function'
-                      when 'genre_form', 'style_period';  'genreform'
+                      when 'genre_form', 'style_period'; 'genreform'
                       when 'geographic'; 'geogname'
-                      when 'occupation';  'occupation'
-                      when 'topical', 'temporal','cultural_context'; 'subject'
+                      when 'occupation'; 'occupation'
+                      when 'topical', 'temporal', 'cultural_context'; 'subject'
                       when 'uniform_title'; 'title'
                       else; nil
                       end
 
           next unless node_name
 
-          content = subject['terms'].map{|t| t['term']}.join(' -- ')
+          content = subject['terms'].map {|t| t['term']}.join(' -- ')
 
           atts = {}
           atts['source'] = subject['source'] if subject['source']
@@ -86,7 +88,6 @@ module ASpaceExport
 
       @controlaccess_linked_agents
     end
-
 
   end
 end
