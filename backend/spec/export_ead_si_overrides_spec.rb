@@ -18,9 +18,13 @@ describe 'SI EAD export mappings' do
     @creator_agent = create(:json_agent_person,
                             :agent_record_identifiers => [ build(:agent_record_identifier, primary_identifier: true)],
                             :publish => true)
+    @creator_agent_with_title = create(:json_agent_corporate_entity,
+                                       :publish => true)
     @subject_agent = create(:json_agent_family,
                             :agent_record_identifiers => [ build(:agent_record_identifier, primary_identifier: true)],
                             :publish => true)
+    @subject_agent_with_title = create(:json_agent_person,
+                                       :publish => true)
 
     @cultural_subject = create(:json_subject,
                                :terms => [build(:json_term, :term_type => 'cultural_context')])
@@ -34,11 +38,21 @@ describe 'SI EAD export mappings' do
                       :linked_agents => [{ :ref => @creator_agent.uri,
                                            :role => 'creator',
                                            :terms => [build(:json_term), build(:json_term)],
-                                           :relator => generate(:relator)},
+                                           :relator => generate(:relator) },
                                          { :ref => @subject_agent.uri,
                                            :role => 'subject',
                                            :terms => [build(:json_term), build(:json_term)],
-                                           :relator => generate(:relator)}],
+                                           :relator => generate(:relator) },
+                                         { :ref => @creator_agent_with_title.uri,
+                                           :role => 'creator',
+                                           :title => 'My agent title',
+                                           :terms => [build(:json_term), build(:json_term)],
+                                           :relator => generate(:relator) },
+                                         { :ref => @subject_agent_with_title.uri,
+                                           :role => 'subject',
+                                           :title => 'My subject agent title',
+                                           :terms => [build(:json_term), build(:json_term)],
+                                           :relator => generate(:relator) }],
                       :subjects => [{ :ref => @cultural_subject.uri },
                                     { :ref => @temporal_subject.uri },
                                     { :ref => @geographic_subject.uri }],
@@ -95,6 +109,13 @@ describe 'SI EAD export mappings' do
       expect(doc.at_xpath("//origination/persname/@authfilenumber").content).
         to match(@creator_agent.agent_record_identifiers.first['record_identifier'])
     end
+
+    it "exports linked agent title as <name role='title'" do
+      expect(doc.at_xpath("//origination/name/@role").content).
+        to match('title')
+      expect(doc.at_xpath("//origination/name").text()).
+        to match("#{@creator_agent_with_title.title}. My agent title")
+    end
   end
 
   describe 'Within <physdesc>' do
@@ -128,6 +149,13 @@ describe 'SI EAD export mappings' do
     it 'exports subject term type into altrender attribute' do
       expect(doc.at_xpath("//controlaccess/geogname/@altrender").content).
         to match('geographic')
+    end
+
+    it "exports linked agent title as <name role='title'" do
+      expect(doc.at_xpath("//controlaccess/name/@role").content).
+        to match('title')
+      expect(doc.at_xpath("//controlaccess/name").text()).
+        to start_with("#{@subject_agent_with_title.title}. My subject agent title")
     end
   end
 
