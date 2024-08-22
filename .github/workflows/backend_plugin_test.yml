@@ -1,0 +1,58 @@
+name: Backend Plugin Testing
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+
+jobs:
+  backend_plugins:
+    runs-on: ubuntu-latest
+    env:
+      PROD_ARCHIVESSPACE_VERSION: v3.3.1
+
+    services:
+      db:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: archivesspace
+          MYSQL_USER: as
+          MYSQL_PASSWORD: as123
+        ports:
+          - 3307:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout ArchivesSpace
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.PROD_ARCHIVESSPACE_VERSION }}
+        repository: Smithsonian/archivesspace
+
+    - name: Checkout plugin
+      uses: actions/checkout@v4
+      with:
+        path: ${{ github.event.repository.name }}
+
+    - name: Copy plugin to ArchivesSpace and add to config
+      run: |
+        cp -r ${{ github.workspace }}/${{ github.event.repository.name }} ${{ github.workspace }}/plugins
+        cd ./common/config/
+        touch config.rb
+        echo "AppConfig[:plugins] = ['${{ github.event.repository.name }}']" > config.rb
+
+    - uses: Smithsonian/caas-aspace-services/.github/actions/bootstrap@main
+      with:
+        backend: true
+
+    - name: Allow ArchivesSpace functions for app db user
+      env:
+        DB_PORT: "3307"
+      run: |
+        mysql --host 127.0.0.1 --port $DB_PORT -uroot -proot -e "SET GLOBAL log_bin_trust_function_creators = 1;"
+
+    - name: Run Backend plugin tests
+      run: |
+        ./build/run backend:test -Dspec="../../plugins/${{ github.event.repository.name }}"
