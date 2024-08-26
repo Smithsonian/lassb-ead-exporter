@@ -7,8 +7,8 @@ This repository is the new home of the previously-named "si-ead-exporter" Archiv
 
 _Origination_
 
-1. <a name="one"></a>Within `<origination>`, sets the value of an agent's `source` attribute from `agent_record_identifers['primary_identifier']['source']`, instead of the ASpace default of `display_name['source']`.
-2. <a name="two"></a>Within `<origination>`, sets the value of an agent's `authfilenumber` attribute from `agent_record_identifers['primary_identifier']['record_identifier']`, instead of the ASpace default `display_name['authority_id']`.
+1. <a name="one"></a>Within `<origination>`, sets the value of an agent's `source` attribute from `agent_record_identifiers['primary_identifier']['source']`, instead of the ASpace default of `display_name['source']`.
+2. <a name="two"></a>Within `<origination>`, sets the value of an agent's `authfilenumber` attribute from `agent_record_identifiers['primary_identifier']['record_identifier']`, instead of the ASpace default `display_name['authority_id']`.
 
 _Extents_
 
@@ -22,8 +22,8 @@ _Control Access Subjects_
 
 _Control Access Linked Agents_
 
-7. <a name="seven"></a>Within `<controlaccess>`, sets the value of an agent's `source` attribute from `agent_record_identifers['primary_identifier']['source']`, instead of the ASpace default of `display_name['source']`.
-8. <a name="eight"></a>Within `<controlaccess>`, sets the value of an agent's `authfilenumber` attribute from `agent_record_identifers['primary_identifier']['record_identifier']`, instead of the ASpace default `display_name['authority_id']`.
+7. <a name="seven"></a>Within `<controlaccess>`, sets the value of an agent's `source` attribute from `agent_record_identifiers['primary_identifier']['source']`, instead of the ASpace default of `display_name['source']`.
+8. <a name="eight"></a>Within `<controlaccess>`, sets the value of an agent's `authfilenumber` attribute from `agent_record_identifiers['primary_identifier']['record_identifier']`, instead of the ASpace default `display_name['authority_id']`.
 
 _External Documents_
 
