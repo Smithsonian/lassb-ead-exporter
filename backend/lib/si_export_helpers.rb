@@ -50,12 +50,16 @@ module ASpaceExport
         linked = self.linked_agents || []
         linked.each_with_index do |link, i|
           next if link['role'] == 'creator' || (link['_resolved']['publish'] == false && !include_unpublished)
-          role = link['relator'] ? link['relator'] : (link['role'] == 'source' ? 'fmo' : nil)
+          title = 'title' if link['title']
+          relator = link['relator'] ? link['relator'] : (link['role'] == 'source' ? 'fmo' : nil)
+          role = [title, relator].compact.reject(&:empty?).join(' ')
 
           agent = link['_resolved'].dup
           sort_name = agent['display_name']['sort_name']
+          sort_name << ". #{link['title']}" if link['title']
           rules = agent['display_name']['rules']
           # NEW, begin
+          agent['agent_type'] = 'name' if link['title']
           source = agent['agent_record_identifiers'].select {|i| i['primary_identifier'] == true}.map {|s| s['source']}.first
           authfilenumber = agent['agent_record_identifiers'].select {|i| i['primary_identifier'] == true}.map {|ri| ri['record_identifier']}.first
           # NEW, end
@@ -70,7 +74,7 @@ module ASpaceExport
                       when 'agent_person'; 'persname'
                       when 'agent_family'; 'famname'
                       when 'agent_corporate_entity'; 'corpname'
-                      when 'agent_software'; 'name'
+                      when 'agent_software', 'name'; 'name'
                       end
 
           atts = {}
