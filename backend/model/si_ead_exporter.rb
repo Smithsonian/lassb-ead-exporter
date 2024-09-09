@@ -44,7 +44,8 @@ class EADSerializer < ASpaceExport::Serializer
         next if !published && !@include_unpublished
 
         link['role'] == 'creator' ? role = link['role'].capitalize : role = link['role']
-        relator = link['title'] ? 'title' : link['relator']
+        title = 'title' if link['title']
+        relator = [title, link['relator']].compact.reject(&:empty?).join(' ')
         sort_name = agent['display_name']['sort_name']
         sort_name << ". #{link['title']}" if link['title']
         rules = agent['display_name']['rules']

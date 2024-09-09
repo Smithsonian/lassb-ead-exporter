@@ -111,8 +111,9 @@ describe 'SI EAD export mappings' do
     end
 
     it "exports linked agent title as <name role='title'" do
+      creator_agent_link = @resource.linked_agents.select { |a| a['ref'] == @creator_agent_with_title.uri }.first
       expect(doc.at_xpath("//origination/name/@role").content).
-        to match('title')
+        to match("title #{creator_agent_link['relator']}")
       expect(doc.at_xpath("//origination/name").text()).
         to match("#{@creator_agent_with_title.title}. My agent title")
     end
@@ -152,8 +153,9 @@ describe 'SI EAD export mappings' do
     end
 
     it "exports linked agent title as <name role='title'" do
+      subject_agent_link = @resource.linked_agents.select { |a| a['ref'] == @subject_agent_with_title.uri }.first
       expect(doc.at_xpath("//controlaccess/name/@role").content).
-        to match('title')
+        to match("title #{subject_agent_link['relator']}")
       expect(doc.at_xpath("//controlaccess/name").text()).
         to start_with("#{@subject_agent_with_title.title}. My subject agent title")
     end
