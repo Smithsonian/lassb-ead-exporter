@@ -75,4 +75,38 @@ class EADSerializer < ASpaceExport::Serializer
     end
   end
 
+  def serialize_rights(data, xml, fragments, include_unpublished)
+    data.rights_statements.each do |rts_stmt|
+      all_unpublished = rts_stmt.dig('notes').map { |n| n['publish'] }.all?(false)
+      return if all_unpublished && !include_unpublished
+
+      xml.userestrict({ id: "aspace_#{rts_stmt['identifier']}", type: rts_stmt['rights_type'] }) {
+        xml.head('Rights Statement')
+
+        rts_stmt['notes'].each do |note|
+          next if note['publish'] === false && !include_unpublished
+
+          atts = {}
+          atts['type'] = note['type']
+          atts['audience'] = 'internal' if note['publish'] === false
+
+          xml.note(atts) {
+            xml.p {
+              note['content'].each do |c|
+                sanitize_mixed_content(c, xml, fragments)
+              end
+            }
+          }
+        end
+
+        xml.list {
+          xml.item {
+            xml.date({ type: 'start', normal: rts_stmt['start_date'] }) if rts_stmt['start_date']
+            xml.date({ type: 'end', normal: rts_stmt['end_date'] }) if rts_stmt['end_date']
+          }
+        }
+      }
+    end
+  end
+
 end

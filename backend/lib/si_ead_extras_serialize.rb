@@ -1,6 +1,6 @@
-class SIEADSerialize
+class SIEADSerialize < EADSerializer
 
-  def call(data, xml, fragments, context)
+  def call(data, xml, fragments, context, include_unpublished)
     # MODIFICATION: Add external documents to note within <c>'s (not exported by default).
     if context == :c
       data.external_documents.each do |ext_doc|
@@ -13,6 +13,10 @@ class SIEADSerialize
         xml.note ({:label => 'See Also', :altrender => 'external_documents'}) {
             xml.p {xml.extref(atts) { xml.text (ext_doc['title']) }}
           }
+      end
+
+      if data.rights_statements
+        serialize_rights(data, xml, fragments, include_unpublished)
       end
 
     # MODIFICATION: Add external documents to note within <archdesc> (not exported by default).
@@ -29,6 +33,10 @@ class SIEADSerialize
               xml.p {xml.extref(atts) { xml.text (ext_doc['title']) }}
             }
         end
+      end
+
+      if data.rights_statements
+        serialize_rights(data, xml, fragments, include_unpublished)
       end
     end
   end

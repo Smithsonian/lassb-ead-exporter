@@ -30,16 +30,30 @@ _External Documents_
 9. <a name="nine"></a>Within `<archdesc>`, exports an additional `<note altrender="external_documents" label="See Also">` note holding a link to an external document.  The note contains an `<extref altrender="online_media">` inside of `<p>` tags, with the extref's `xlink:href` and `xlink:title` attributes populated from the external document record.  External documents are not exported by ASpace by default.
 10. <a name="ten"></a>Within `<c>`, exports an additional `<note altrender="external_documents" label="See Also">` note holding a link to an external document.  The note contains an `<extref altrender="online_media">` inside of `<p>` tags, with the extref's `xlink:href` and `xlink:title` attributes populated from the external document record.  External documents are not exported by ASpace by default.
 
+_Rights Statements_
 
-| Line        | ASpace Default (simplified example)                                | SI Override (simplified example)                                      |
-| ----------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| [1](#one)   | `<persname source="display_name['source']">`                       | `<persname source="primary_identifier['source']">`                    |
-| [2](#two)   | `<persname authfilenumber="display_name['authority_id']">`         | `<persname authfilenumber="primary_identifier['record_identifier']">` |
-| [3](#three) | `<extent altrender="materialtype spaceoccupied">1 Sheets</extent>` | `<extent type="Sheets">1 Sheets</extent>`                             |
-| [4](#four)  | `<geogname>Cultural Context Term</geogname>`                       | `<subject>Cultural Context Term</subject>`                            |
-| [5](#five)  | none                                                               | `<subjec>Temporal term</subject>`                                     |
-| [6](#six)   | `<subject>`                                                        | `<subject altrender="topical">`                                       |
-| [7](#seven) | `<persname source="display_name['source']">`                       | `<persname source="primary_identifier['source']">`                    |
-| [8](#eight) | `<persname authfilenumber="display_name['authority_id']">`         | `<persname authfilenumber="primary_identifier['record_identifier']">` |
-| [9](#nine)  | none                                                               | `<note altrender="external_documents" label="See Also"><p><extref altrender="online_media" xlink:href="location" xlink:title="Title">Title</extref></p></note>` |
-| [10](#ten)  | none                                                               | `<note altrender="external_documents" label="See Also"><p><extref altrender="online_media" xlink:href="location" xlink:title="Title">Title</extref></p></note>` |
+11. <a name="eleven"></a>Within `<archdesc>`, exports `<userestrict>` holding a `<head>`, `<note>`, and `<list><item><date/></item></list>` matching a resource-level rights statement.  Rights statements are not exported by ASpace by default.
+12. <a name="twelve"></a>Within `<c>`, exports `<userestrict>` holding a `<head>`, `<note>`, and `<list><item><date/></item></list>` matching an archival object-level rights statement.  Rights statements are not exported by ASpace by default.
+
+| Line         | ASpace Default (simplified example)                                | SI Override (simplified example)                                      |
+| ------------ | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| [1](#one)    | `<persname source="display_name['source']">`                       | `<persname source="primary_identifier['source']">`                    |
+| [2](#two)    | `<persname authfilenumber="display_name['authority_id']">`         | `<persname authfilenumber="primary_identifier['record_identifier']">` |
+| [3](#three)  | `<extent altrender="materialtype spaceoccupied">1 Sheets</extent>` | `<extent type="Sheets">1 Sheets</extent>`                             |
+| [4](#four)   | `<geogname>Cultural Context Term</geogname>`                       | `<subject>Cultural Context Term</subject>`                            |
+| [5](#five)   | none                                                               | `<subjec>Temporal term</subject>`                                     |
+| [6](#six)    | `<subject>`                                                        | `<subject altrender="topical">`                                       |
+| [7](#seven)  | `<persname source="display_name['source']">`                       | `<persname source="primary_identifier['source']">`                    |
+| [8](#eight)  | `<persname authfilenumber="display_name['authority_id']">`         | `<persname authfilenumber="primary_identifier['record_identifier']">` |
+| [9](#nine)   | none                                                               | `<note altrender="external_documents" label="See Also"><p><extref altrender="online_media" xlink:href="location" xlink:title="Title">Title</extref></p></note>` |
+| [10](#ten)   | none                                                               | `<note altrender="external_documents" label="See Also"><p><extref altrender="online_media" xlink:href="location" xlink:title="Title">Title</extref></p></note>` |
+| [11](#eleven)| none                                                               | `<userestrict id="aspace_[identifier]" type="[rights_type]"><head>Rights Statement</head><note type="[note_type]"><p>[note_content]</p></note><list><item><date normal="[start_date]" type="start" /></item></list></userestrict>` |
+| [12](#twelve)| none                                                               | `<userestrict id="aspace_[identifier]" type="[rights_type]"><head>Rights Statement</head><note type="[note_type]"><p>[note_content]</p></note><list><item><date normal="[start_date]" type="start" /></item></list></userestrict>` |
+
+## Tests
+
+Run the backend tests via: 
+
+```
+./build/run backend:test -Dspec="../../plugins/lassb-ead-exporter"
+```
