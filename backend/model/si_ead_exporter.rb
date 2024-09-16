@@ -75,6 +75,25 @@ class EADSerializer < ASpaceExport::Serializer
     end
   end
 
+  def serialize_external_docs(data, xml, fragments, include_unpublished)
+    data.external_documents.each do |ext_doc|
+      return if ext_doc['publish'] === false && !include_unpublished
+      note_atts = {}
+      note_atts['label'] = 'See Also'
+      note_atts['altrender'] = 'external_documents'
+      note_atts['audience'] = 'internal' if ext_doc['publish'] === false
+
+      link_atts = {}
+      link_atts['xlink:href'] = ext_doc['location']
+      link_atts['xlink:title'] = ext_doc['title']
+      link_atts['altrender'] = 'online_media'
+
+      xml.note (note_atts) {
+        xml.p {xml.extref(link_atts) { xml.text (ext_doc['title']) }}
+      }
+    end
+  end
+
   def serialize_rights(data, xml, fragments, include_unpublished)
     data.rights_statements.each do |rts_stmt|
       all_unpublished = rts_stmt.dig('notes').map { |n| n['publish'] }.all?(false)

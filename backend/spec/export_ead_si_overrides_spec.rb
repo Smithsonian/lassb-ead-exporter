@@ -36,6 +36,9 @@ describe 'SI EAD export mappings' do
     @published_note = build(:json_note_rights_statement, publish: true)
     @unpublished_note = build(:json_note_rights_statement, publish: false)
 
+    @published_external_doc = build(:json_external_document, publish: true)
+    @unpublished_external_doc = build(:json_external_document, publish: false)
+
     resource = create(:json_resource,
                       :extents => @extents,
                       :linked_agents => [{ :ref => @creator_agent.uri,
@@ -60,7 +63,8 @@ describe 'SI EAD export mappings' do
                                     { :ref => @temporal_subject.uri },
                                     { :ref => @geographic_subject.uri }],
                       :publish => true,
-                      :external_documents => [build(:json_external_document, {:publish => true})],
+                      :external_documents => [@published_external_doc,
+                                              @unpublished_external_doc],
                       :rights_statements => [build(:json_rights_statement,
                                                    notes: [@published_note,
                                                            @unpublished_note])]
@@ -71,7 +75,8 @@ describe 'SI EAD export mappings' do
     @archival_object = create(:json_archival_object,
                               :resource => {:ref => @resource.uri},
                               :publish => true,
-                              :external_documents => [build(:json_external_document, {:publish => true})],
+                              :external_documents => [@published_external_doc,
+                                                      @unpublished_external_doc],
                               :rights_statements => [build(:json_rights_statement,
                                                            notes: [@published_note,
                                                                    @unpublished_note])]
@@ -178,62 +183,75 @@ describe 'SI EAD export mappings' do
   end
 
   describe 'Within <archdesc>' do
-    it 'exports external_documents to <note>' do
-      expect(doc_unpublished.at_xpath("/ead/archdesc/note[@altrender='external_documents']/@label").content).
-        to match('See Also')
-      expect(doc_unpublished.at_xpath("/ead/archdesc/note[@altrender='external_documents']/p/extref/@altrender").content).
-        to match('online_media')
-      expect(doc_unpublished.at_xpath("/ead/archdesc/note[@altrender='external_documents']/p/extref/@href").content).
-        to match(@resource.external_documents.first['location'])
-      expect(doc_unpublished.at_xpath("/ead/archdesc/note[@altrender='external_documents']/p/extref/@title").content).
-        to match(@resource.external_documents.first['title'])
-      expect(doc_unpublished.at_xpath("/ead/archdesc/note[@altrender='external_documents']/p/extref/@title").text()).
-        to match(@resource.external_documents.first['title'])
-    end
+    let(:unpublished_external_doc) { doc.at_xpath("/ead/archdesc/note[@altrender='external_documents' and @audience='internal']") }
+    let(:published_external_doc) { doc.at_xpath("/ead/archdesc/note[@altrender='external_documents' and not(@audience='internal')]") }
+    let(:unpublished_note) { doc.at_xpath("/ead/archdesc/userestrict/note[@audience='internal']") }
+    let(:published_note) { doc.at_xpath("/ead/archdesc/userestrict/note[not(@audience='internal')]") }
 
     context 'when including unpublished' do
       let(:doc) { doc_unpublished }
 
-      it 'exports rights_statements to <userestrict>' do
-        expect(doc.at_xpath("/ead/archdesc/userestrict/@id").content).
-          to match("aspace_#{@resource.rights_statements.first['identifier']}")
-        expect(doc.at_xpath("/ead/archdesc/userestrict/@type").content).
-          to match(@resource.rights_statements.first['rights_type'])
-        expect(doc.at_xpath("/ead/archdesc/userestrict/head").content).
-          to match('Rights Statement')
-        expect(doc.at_xpath("/ead/archdesc/userestrict/list/item/date/@type").content).
-          to eq('start')
-        expect(doc.at_xpath("/ead/archdesc/userestrict/list/item/date/@normal").content).
-          to match(@resource.rights_statements.first['start_date'])
+      it 'includes published and unpublished external documents' do
+        expect(doc.xpath("/ead/archdesc/note[@altrender='external_documents']").count).to eq(2)
       end
 
-      it 'includes published and unpublished notes' do
+      it 'includes published and unpublished userestrict notes' do
         expect(doc.xpath("/ead/archdesc/userestrict/note").count).to eq(2)
       end
 
-      describe 'the unpublished note' do
-        let(:note) { doc.at_xpath("/ead/archdesc/userestrict/note[@audience='internal']") }
-
+      describe 'the unpublished external document' do
         it 'has an audience of internal' do
-          expect(note.at_xpath("@audience").content).to eq('internal')
+          expect(unpublished_external_doc.at_xpath("@audience").content).to eq('internal')
+        end
+
+        it 'exports the unpublished external_documents to <note>' do
+          expect(unpublished_external_doc.at_xpath("@label").content).
+            to match('See Also')
+          expect(unpublished_external_doc.at_xpath("p/extref/@altrender").content).
+            to match('online_media')
+          expect(unpublished_external_doc.at_xpath("p/extref/@href").content).
+            to match(@unpublished_external_doc['location'])
+          expect(unpublished_external_doc.at_xpath("p/extref/@title").content).
+            to match(@unpublished_external_doc['title'])
+          expect(unpublished_external_doc.at_xpath("p/extref/@title").text()).
+            to match(@unpublished_external_doc['title'])
+        end
+      end
+
+      describe 'the published external document' do
+        it 'exports the published external_documents to <note>' do
+          expect(published_external_doc.at_xpath("@label").content).
+            to match('See Also')
+          expect(published_external_doc.at_xpath("p/extref/@altrender").content).
+            to match('online_media')
+          expect(published_external_doc.at_xpath("p/extref/@href").content).
+            to match(@published_external_doc['location'])
+          expect(published_external_doc.at_xpath("p/extref/@title").content).
+            to match(@published_external_doc['title'])
+          expect(published_external_doc.at_xpath("p/extref/@title").text()).
+            to match(@published_external_doc['title'])
+        end
+      end
+
+      describe 'the unpublished note' do
+        it 'has an audience of internal' do
+          expect(unpublished_note.at_xpath("@audience").content).to eq('internal')
         end
 
         it 'exports correctly' do
-          expect(note.content).to match(@unpublished_note.content.join(''))
-          expect(note.at_xpath("@type").content).to match(@unpublished_note.type)
+          expect(unpublished_note.content).to match(@unpublished_note.content.join(''))
+          expect(unpublished_note.at_xpath("@type").content).to match(@unpublished_note.type)
         end
       end
 
       describe 'the published note' do
-        let(:note) { doc.at_xpath("/ead/archdesc/userestrict/note[not(@audience='internal')]") }
-
         it 'has no audience attribute' do
-          expect(note.at_xpath("@audience")).to be(nil)
+          expect(published_note.at_xpath("@audience")).to be(nil)
         end
 
         it 'exports correctly' do
-          expect(note.content).to match(@published_note.content.join(''))
-          expect(note.at_xpath("@type").content).to match(@published_note.type)
+          expect(published_note.content).to match(@published_note.content.join(''))
+          expect(published_note.at_xpath("@type").content).to match(@published_note.type)
         end
       end
     end
@@ -241,103 +259,128 @@ describe 'SI EAD export mappings' do
     context 'when excluding unpublished' do
       let(:doc) { doc_published }
 
-      it 'exports rights_statements to <userestrict>' do
-        expect(doc.at_xpath("/ead/archdesc/userestrict/@id").content).
-          to match("aspace_#{@resource.rights_statements.first['identifier']}")
-        expect(doc.at_xpath("/ead/archdesc/userestrict/@type").content).
-          to match(@resource.rights_statements.first['rights_type'])
-        expect(doc.at_xpath("/ead/archdesc/userestrict/head").content).
-          to match('Rights Statement')
-        expect(doc.at_xpath("/ead/archdesc/userestrict/list/item/date/@type").content).
-          to eq('start')
-        expect(doc.at_xpath("/ead/archdesc/userestrict/list/item/date/@normal").content).
-          to match(@resource.rights_statements.first['start_date'])
+      it 'includes only the published external documents note' do
+        expect(doc.xpath("/ead/archdesc/note[@altrender='external_documents']").count).to eq(1)
       end
 
       it 'includes only the published note' do
         expect(doc.xpath("/ead/archdesc/userestrict/note").count).to eq(1)
       end
 
-      describe 'the unpublished note' do
-        let(:note) { doc.at_xpath("/ead/archdesc/userestrict/note[@audience='internal']") }
-
+      describe 'the unpublished external document' do
         it 'is not exported' do
-          expect(note).to be(nil)
+          expect(unpublished_external_doc).to be(nil)
+        end
+      end
+
+      describe 'the published external document' do
+        it 'has no audience attribute' do
+          expect(published_external_doc.at_xpath("@audience")).to be(nil)
+        end
+
+        it 'exports external_documents to <note>' do
+          expect(published_external_doc.at_xpath("@label").content).
+            to match('See Also')
+          expect(published_external_doc.at_xpath("p/extref/@altrender").content).
+            to match('online_media')
+          expect(published_external_doc.at_xpath("p/extref/@href").content).
+            to match(@published_external_doc['location'])
+          expect(published_external_doc.at_xpath("p/extref/@title").content).
+            to match(@published_external_doc['title'])
+          expect(published_external_doc.at_xpath("p/extref/@title").text()).
+            to match(@published_external_doc['title'])
+        end
+      end
+
+      describe 'the unpublished note' do
+        it 'is not exported' do
+          expect(unpublished_note).to be(nil)
         end
       end
 
       describe 'the published note' do
-        let(:note) { doc.at_xpath("/ead/archdesc/userestrict/note[not(@audience='internal')]") }
-
         it 'has no audience attribute' do
-          expect(note.at_xpath("@audience")).to be(nil)
+          expect(published_note.at_xpath("@audience")).to be(nil)
         end
 
         it 'exports correctly' do
-          expect(note.content).to match(@published_note.content.join(''))
-          expect(note.at_xpath("@type").content).to match(@published_note.type)
+          expect(published_note.content).to match(@published_note.content.join(''))
+          expect(published_note.at_xpath("@type").content).to match(@published_note.type)
         end
       end
     end
   end
 
   describe 'Within <c>' do
-    it 'exports external_documents to <note>' do
-      expect(doc_unpublished.at_xpath("/ead/archdesc/dsc/c/note[@altrender='external_documents']/@label").content).
-        to match('See Also')
-      expect(doc_unpublished.at_xpath("/ead/archdesc/dsc/c/note[@altrender='external_documents']/p/extref/@altrender").content).
-        to match('online_media')
-      expect(doc_unpublished.at_xpath("/ead/archdesc/dsc/c/note[@altrender='external_documents']/p/extref/@href").content).
-        to match(@archival_object.external_documents.first['location'])
-      expect(doc_unpublished.at_xpath("/ead/archdesc/dsc/c/note[@altrender='external_documents']/p/extref/@title").content).
-        to match(@archival_object.external_documents.first['title'])
-      expect(doc_unpublished.at_xpath("/ead/archdesc/dsc/c/note[@altrender='external_documents']/p/extref/@title").text()).
-        to match(@archival_object.external_documents.first['title'])
-    end
+    let(:unpublished_external_doc) { doc.at_xpath("/ead/archdesc/dsc/c/note[@altrender='external_documents' and @audience='internal']") }
+    let(:published_external_doc) { doc.at_xpath("/ead/archdesc/dsc/c/note[@altrender='external_documents' and not(@audience='internal')]") }
+    let(:unpublished_note) { doc.at_xpath("/ead/archdesc/dsc/c/userestrict/note[@audience='internal']") }
+    let(:published_note) { doc.at_xpath("/ead/archdesc/dsc/c/userestrict/note[not(@audience='internal')]") }
 
     context 'when including unpublished' do
       let(:doc) { doc_unpublished }
 
-      it 'exports rights_statements to <userestrict>' do
-        expect(doc.at_xpath("/ead/archdesc/dsc/c/userestrict/@id").content).
-          to match("aspace_#{@archival_object.rights_statements.first['identifier']}")
-        expect(doc.at_xpath("/ead/archdesc/dsc/c/userestrict/@type").content).
-          to match(@archival_object.rights_statements.first['rights_type'])
-        expect(doc.at_xpath("/ead/archdesc/dsc/c/userestrict/head").content).
-          to match('Rights Statement')
-        expect(doc.at_xpath("/ead/archdesc/dsc/c/userestrict/list/item/date/@type").content).
-          to eq('start')
-        expect(doc.at_xpath("/ead/archdesc/dsc/c/userestrict/list/item/date/@normal").content).
-          to match(@archival_object.rights_statements.first['start_date'])
+      it 'includes published and unpublished external documents' do
+        expect(doc.xpath("/ead/archdesc/dsc/c/note[@altrender='external_documents']").count).to eq(2)
       end
 
-      it 'includes published and unpublished notes' do
+      it 'includes published and unpublished userestrict notes' do
         expect(doc.xpath("/ead/archdesc/dsc/c/userestrict/note").count).to eq(2)
       end
 
-      describe 'the unpublished note' do
-        let(:note) { doc.at_xpath("/ead/archdesc/dsc/c/userestrict/note[@audience='internal']") }
-
+      describe 'the unpublished external document' do
         it 'has an audience of internal' do
-          expect(note.at_xpath("@audience").content).to eq('internal')
+          expect(unpublished_external_doc.at_xpath("@audience").content).to eq('internal')
+        end
+
+        it 'exports the unpublished external_documents to <note>' do
+          expect(unpublished_external_doc.at_xpath("@label").content).
+            to match('See Also')
+          expect(unpublished_external_doc.at_xpath("p/extref/@altrender").content).
+            to match('online_media')
+          expect(unpublished_external_doc.at_xpath("p/extref/@href").content).
+            to match(@unpublished_external_doc['location'])
+          expect(unpublished_external_doc.at_xpath("p/extref/@title").content).
+            to match(@unpublished_external_doc['title'])
+          expect(unpublished_external_doc.at_xpath("p/extref/@title").text()).
+            to match(@unpublished_external_doc['title'])
+        end
+      end
+
+      describe 'the published external document' do
+        it 'exports the published external_documents to <note>' do
+          expect(published_external_doc.at_xpath("@label").content).
+            to match('See Also')
+          expect(published_external_doc.at_xpath("p/extref/@altrender").content).
+            to match('online_media')
+          expect(published_external_doc.at_xpath("p/extref/@href").content).
+            to match(@published_external_doc['location'])
+          expect(published_external_doc.at_xpath("p/extref/@title").content).
+            to match(@published_external_doc['title'])
+          expect(published_external_doc.at_xpath("p/extref/@title").text()).
+            to match(@published_external_doc['title'])
+        end
+      end
+
+      describe 'the unpublished note' do
+        it 'has an audience of internal' do
+          expect(unpublished_note.at_xpath("@audience").content).to eq('internal')
         end
 
         it 'exports correctly' do
-          expect(note.content).to match(@unpublished_note.content.join(''))
-          expect(note.at_xpath("@type").content).to match(@unpublished_note.type)
+          expect(unpublished_note.content).to match(@unpublished_note.content.join(''))
+          expect(unpublished_note.at_xpath("@type").content).to match(@unpublished_note.type)
         end
       end
 
       describe 'the published note' do
-        let(:note) { doc.at_xpath("/ead/archdesc/dsc/c/userestrict/note[not(@audience='internal')]") }
-
         it 'has no audience attribute' do
-          expect(note.at_xpath("@audience")).to be(nil)
+          expect(published_note.at_xpath("@audience")).to be(nil)
         end
 
         it 'exports correctly' do
-          expect(note.content).to match(@published_note.content.join(''))
-          expect(note.at_xpath("@type").content).to match(@published_note.type)
+          expect(published_note.content).to match(@published_note.content.join(''))
+          expect(published_note.at_xpath("@type").content).to match(@published_note.type)
         end
       end
     end
@@ -345,41 +388,53 @@ describe 'SI EAD export mappings' do
     context 'when excluding unpublished' do
       let(:doc) { doc_published }
 
-      it 'exports rights_statements to <userestrict>' do
-        expect(doc.at_xpath("/ead/archdesc/dsc/c/userestrict/@id").content).
-          to match("aspace_#{@archival_object.rights_statements.first['identifier']}")
-        expect(doc.at_xpath("/ead/archdesc/dsc/c/userestrict/@type").content).
-          to match(@archival_object.rights_statements.first['rights_type'])
-        expect(doc.at_xpath("/ead/archdesc/dsc/c/userestrict/head").content).
-          to match('Rights Statement')
-        expect(doc.at_xpath("/ead/archdesc/dsc/c/userestrict/list/item/date/@type").content).
-          to eq('start')
-        expect(doc.at_xpath("/ead/archdesc/dsc/c/userestrict/list/item/date/@normal").content).
-          to match(@archival_object.rights_statements.first['start_date'])
+      it 'includes only the published external documents note' do
+        expect(doc.xpath("/ead/archdesc/dsc/c/note[@altrender='external_documents']").count).to eq(1)
       end
 
       it 'includes only the published note' do
         expect(doc.xpath("/ead/archdesc/dsc/c/userestrict/note").count).to eq(1)
       end
 
-      describe 'the unpublished note' do
-        let(:note) { doc.at_xpath("/ead/archdesc/dsc/c/userestrict/note[@audience='internal']") }
-
+      describe 'the unpublished external document' do
         it 'is not exported' do
-          expect(note).to be(nil)
+          expect(unpublished_external_doc).to be(nil)
+        end
+      end
+
+      describe 'the published external document' do
+        it 'has no audience attribute' do
+          expect(published_external_doc.at_xpath("@audience")).to be(nil)
+        end
+
+        it 'exports external_documents to <note>' do
+          expect(published_external_doc.at_xpath("@label").content).
+            to match('See Also')
+          expect(published_external_doc.at_xpath("p/extref/@altrender").content).
+            to match('online_media')
+          expect(published_external_doc.at_xpath("p/extref/@href").content).
+            to match(@published_external_doc['location'])
+          expect(published_external_doc.at_xpath("p/extref/@title").content).
+            to match(@published_external_doc['title'])
+          expect(published_external_doc.at_xpath("p/extref/@title").text()).
+            to match(@published_external_doc['title'])
+        end
+      end
+
+      describe 'the unpublished note' do
+        it 'is not exported' do
+          expect(unpublished_note).to be(nil)
         end
       end
 
       describe 'the published note' do
-        let(:note) { doc.at_xpath("/ead/archdesc/dsc/c/userestrict/note[not(@audience='internal')]") }
-
         it 'has no audience attribute' do
-          expect(note.at_xpath("@audience")).to be(nil)
+          expect(published_note.at_xpath("@audience")).to be(nil)
         end
 
         it 'exports correctly' do
-          expect(note.content).to match(@published_note.content.join(''))
-          expect(note.at_xpath("@type").content).to match(@published_note.type)
+          expect(published_note.content).to match(@published_note.content.join(''))
+          expect(published_note.at_xpath("@type").content).to match(@published_note.type)
         end
       end
     end
