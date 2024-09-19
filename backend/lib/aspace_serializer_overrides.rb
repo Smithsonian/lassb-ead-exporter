@@ -8,7 +8,12 @@ class EADSerializer < ASpaceExport::Serializer
 
     def self.run_serialize_step(data, xml, fragments, context, include_unpublished = false)
       Array(@extra_serialize_steps).each do |step|
-        step.new.call(data, xml, fragments, context, include_unpublished)
+        # Adding in check so as not to break existing plugins missing `include_unpublished`
+        if step.new.method(:call).arity == 4
+          step.new.call(data, xml, fragments, context)
+        else
+          step.new.call(data, xml, fragments, context, include_unpublished)
+        end
       end
     end
 
