@@ -1,0 +1,9 @@
+inherit_from: ../../.rubocop.yml
+
+inherit_mode:
+  merge:
+    - Include
+
+AllCops:
+  Include:
+    - .
