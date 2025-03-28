@@ -1,0 +1,24 @@
+name: Code Scan
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+
+jobs:
+  code_scan:
+    runs-on: ubuntu-latest
+    env:
+      PROD_ARCHIVESSPACE_VERSION: v3.3.1
+
+    steps:
+    - name: Setup ArchivesSpace ${{ env.PROD_ARCHIVESSPACE_VERSION }}
+      uses: Smithsonian/caas-aspace-services/.github/actions/setup_archivesspace@main
+      with:
+        archivesspace-version: ${{ env.PROD_ARCHIVESSPACE_VERSION }}
+        plugin: ${{ github.event.repository.name }}
+
+    - name: Run Rubocop
+      run: |
+        ./build/run rubocop -Ddir="plugins/${{ github.event.repository.name }}"
