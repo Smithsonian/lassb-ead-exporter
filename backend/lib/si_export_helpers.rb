@@ -47,7 +47,8 @@ module ASpaceExport
         results = []
         linked = self.linked_agents || []
         linked.each_with_index do |link, i|
-          next if link['role'] == 'creator' || (link['_resolved']['publish'] == false && !include_unpublished)
+          # MODIFICATION:  rather than just filtering out Creators here, let's filter out Creator and Source roles.  That is, only Subject roles should show up in the controlaccess section.
+          next if link['role'] != 'subject' || (link['_resolved']['publish'] == false && !include_unpublished)
           role = link['relator'] ? link['relator'] : (link['role'] == 'source' ? 'fmo' : nil)
 
           agent = link['_resolved'].dup
