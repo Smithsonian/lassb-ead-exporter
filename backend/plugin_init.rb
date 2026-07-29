@@ -1,3 +1,4 @@
+require_relative 'lib/aspace_serializer_overrides'
 require_relative 'lib/si_ead_extras_serialize'
 require_relative 'lib/si_export_helpers'
 
